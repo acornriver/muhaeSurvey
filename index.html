@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0b0b0f" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>CARE CALL ZONE | 무해센터 예방관리국</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<!-- p5.js & p5.sound library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
+<style>
+    :root {
+        --bg-color: #08080c;
+        --card-bg: rgba(18, 18, 24, 0.85);
+        --card-border: rgba(255, 255, 255, 0.08);
+        --text-primary: #ededed;
+        --text-secondary: #8c8c9a;
+        --accent-red: #ff3344;
+        --accent-red-glow: rgba(255, 51, 68, 0.4);
+        --accent-red-hover: #ff4d5d;
+        --btn-bg: rgba(255, 255, 255, 0.04);
+        --btn-border: rgba(255, 255, 255, 0.18);
+        --font-sans: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        --font-mono: 'Share Tech Mono', 'Chakra Petch', monospace;
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+        width: 100%;
+        height: 100%;
+        min-height: 100dvh;
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        font-family: var(--font-sans);
+        overflow-x: hidden;
+        word-break: keep-all;
+        word-wrap: break-word;
+    }
+
+    /* 사이버네틱 그리드 및 스캔라인 배경 */
+    body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+            radial-gradient(circle at 50% 20%, rgba(255, 51, 68, 0.07), transparent 60%),
+            linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        background-size: 100% 100%, 40px 40px, 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* 화면 컨테이너 (모바일 / 태블릿 / PC 공통 프레임) */
+    .app-viewport {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 16px;
+        padding-top: max(16px, env(safe-area-inset-top));
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
+        padding-left: max(16px, env(safe-area-inset-left));
+        padding-right: max(16px, env(safe-area-inset-right));
+    }
+
+    .screen {
+        display: none;
+        width: 100%;
+        max-width: 680px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        padding: 36px 28px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.03);
+        animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        position: relative;
+    }
+
+    .screen.active {
+        display: flex;
+        flex-direction: column;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(12px) scale(0.99);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    /* 상단 상태 뱃지 및 타이틀 */
+    .screen-header {
+        margin-bottom: 24px;
+    }
+
+    .title {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--font-mono);
+        font-size: clamp(13px, 2.8vw, 15px);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        padding: 4px 10px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 4px;
+    }
+
+    .title::before {
+        content: "";
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        background-color: var(--accent-red);
+        border-radius: 50%;
+        box-shadow: 0 0 8px var(--accent-red);
+    }
+
+    /* 메인 텍스트 */
+    .big {
+        font-size: clamp(20px, 4.5vw, 26px);
+        font-weight: 700;
+        line-height: 1.55;
+        color: #ffffff;
+        margin-bottom: 32px;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .slogan {
+        font-size: clamp(15px, 3.4vw, 18px);
+        font-weight: 400;
+        line-height: 1.6;
+        color: #cfd2de;
+        margin-top: 16px;
+        padding-left: 14px;
+        border-left: 2px solid var(--accent-red);
+    }
+
+    /* 프로그레스 바 */
+    .progress {
+        height: 6px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 999px;
+        margin-bottom: 28px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #ff5967, var(--accent-red));
+        border-radius: 999px;
+        box-shadow: 0 0 12px var(--accent-red-glow);
+        transition: width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    /* 버튼 컨트롤 */
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+        margin-top: auto;
+    }
+
+    @media (min-width: 540px) {
+        .btn-group.row-layout {
+            flex-direction: row;
+        }
+        .btn-group.row-layout .btn {
+            flex: 1;
+        }
+    }
+
+    .btn {
+        width: 100%;
+        min-height: 54px;
+        padding: 16px 22px;
+        border: 1px solid var(--btn-border);
+        background: var(--btn-bg);
+        color: #f0f0f5;
+        cursor: pointer;
+        font-size: clamp(15px, 3.2vw, 17px);
+        font-weight: 600;
+        font-family: inherit;
+        border-radius: 10px;
+        transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        touch-action: manipulation;
+        user-select: none;
+    }
+
+    .btn:active {
+        transform: scale(0.97);
+        filter: brightness(1.15);
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        .btn:hover {
+            border-color: rgba(255, 255, 255, 0.45);
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+    }
+
+    .btn.danger {
+        border-color: rgba(255, 51, 68, 0.5);
+        color: #fff;
+        background: rgba(255, 51, 68, 0.12);
+        box-shadow: inset 0 0 12px rgba(255, 51, 68, 0.15);
+    }
+
+    .btn.danger:active {
+        background: rgba(255, 51, 68, 0.3);
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        .btn.danger:hover {
+            border-color: var(--accent-red);
+            background: rgba(255, 51, 68, 0.22);
+            box-shadow: 0 0 20px var(--accent-red-glow), inset 0 0 16px rgba(255, 51, 68, 0.2);
+            color: #ffffff;
+        }
+    }
+
+    /* 시작 버튼 특수 스타일 */
+    .btn.start-btn {
+        background: linear-gradient(135deg, rgba(255, 51, 68, 0.25), rgba(255, 51, 68, 0.08));
+        border-color: var(--accent-red);
+        box-shadow: 0 4px 20px rgba(255, 51, 68, 0.3);
+        font-size: clamp(16px, 3.8vw, 18px);
+        letter-spacing: 0.02em;
+    }
+
+    /* 로딩 / 경고 애니메이션 */
+    .warning {
+        color: var(--accent-red);
+        animation: pulseWarning 0.9s infinite alternate;
+        font-family: var(--font-mono);
+        letter-spacing: 0.05em;
+    }
+
+    @keyframes pulseWarning {
+        from {
+            opacity: 0.35;
+            text-shadow: 0 0 4px rgba(255, 51, 68, 0.2);
+        }
+        to {
+            opacity: 1;
+            text-shadow: 0 0 18px var(--accent-red);
+        }
+    }
+
+    .radar-spinner {
+        width: 52px;
+        height: 52px;
+        border: 3px solid rgba(255, 51, 68, 0.15);
+        border-top-color: var(--accent-red);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin: 20px auto 10px;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* 푸터 */
+    .footer {
+        margin-top: 32px;
+        padding-top: 16px;
+        border-top: 1px dashed rgba(255, 255, 255, 0.08);
+        font-family: var(--font-mono);
+        font-size: clamp(11px, 2.5vw, 13px);
+        color: var(--text-secondary);
+        letter-spacing: 0.06em;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* 시스템 오버라이드 오버레이 (강렬한 전면 경고) */
+    .overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        background: radial-gradient(circle at center, #90000e, #3a0005 85%);
+        color: #ffffff;
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 30px;
+        font-family: var(--font-mono);
+        animation: glitchFlash 0.18s ease;
+    }
+
+    .overlay-inner {
+        max-width: 480px;
+        width: 100%;
+        border: 2px solid #ff4d5d;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 36px 24px;
+        border-radius: 8px;
+        box-shadow: 0 0 50px rgba(255, 0, 0, 0.6), inset 0 0 30px rgba(255, 0, 0, 0.4);
+    }
+
+    .overlay-title {
+        font-size: clamp(20px, 5.5vw, 28px);
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        color: #fff;
+        margin-bottom: 24px;
+        text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        padding-bottom: 16px;
+    }
+
+    .overlay-desc {
+        font-size: clamp(17px, 4.2vw, 22px);
+        line-height: 1.6;
+        color: #ffcccc;
+        margin-bottom: 16px;
+    }
+
+    .overlay-badge {
+        display: inline-block;
+        padding: 6px 18px;
+        background: #ff1e33;
+        color: #fff;
+        font-weight: bold;
+        font-size: clamp(14px, 3.5vw, 17px);
+        letter-spacing: 0.1em;
+        margin-top: 10px;
+        box-shadow: 0 0 20px #ff001e;
+        border-radius: 4px;
+        animation: pulseBadge 0.6s infinite alternate;
+    }
+
+    @keyframes pulseBadge {
+        from { transform: scale(0.97); }
+        to { transform: scale(1.03); }
+    }
+
+    @keyframes glitchFlash {
+        0% { opacity: 0; filter: invert(1); }
+        50% { opacity: 1; filter: invert(0); }
+        70% { opacity: 0.8; filter: invert(0.5); }
+        100% { opacity: 1; filter: invert(0); }
+    }
+
+    /* 모바일 맞춤 최적화 미디어 쿼리 */
+    @media (max-width: 480px) {
+        .app-viewport {
+            padding: 12px;
+            padding-top: max(12px, env(safe-area-inset-top));
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+        }
+
+        .screen {
+            padding: 24px 18px;
+            border-radius: 14px;
+        }
+
+        .screen-header {
+            margin-bottom: 18px;
+        }
+
+        .big {
+            margin-bottom: 24px;
+        }
+
+        .btn {
+            min-height: 50px;
+            padding: 14px 18px;
+        }
+
+        .footer {
+            margin-top: 24px;
+            padding-top: 12px;
+        }
+    }
+
+    /* 태블릿/가로모드 최적화 (높이가 낮은 기기) */
+    @media (max-height: 600px) {
+        .app-viewport {
+            align-items: flex-start;
+            padding-top: 16px;
+            padding-bottom: 16px;
+        }
+        .big {
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+        .btn-group {
+            margin-top: 12px;
+        }
+        .footer {
+            margin-top: 16px;
+        }
+    }
+
+    /* 사운드 컨트롤 버튼 */
+    .sound-control {
+        position: fixed;
+        top: max(14px, env(safe-area-inset-top));
+        right: max(14px, env(safe-area-inset-right));
+        z-index: 1000;
+    }
+
+    .sound-btn {
+        background: rgba(18, 18, 24, 0.75);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #d0d0d8;
+        font-family: var(--font-mono);
+        font-size: clamp(11px, 2.5vw, 13px);
+        letter-spacing: 0.05em;
+        padding: 6px 12px;
+        border-radius: 20px;
+        cursor: pointer;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        user-select: none;
+    }
+
+    .sound-btn:hover {
+        border-color: rgba(255, 255, 255, 0.4);
+        color: #ffffff;
+    }
+
+    .sound-btn:active {
+        transform: scale(0.95);
+    }
+
+    .sound-btn.muted {
+        color: #777;
+        border-color: rgba(255, 255, 255, 0.08);
+        background: rgba(10, 10, 14, 0.6);
+    }
+</style>
+</head>
+<body>
+
+<div class="sound-control">
+    <button id="soundToggle" class="sound-btn" onclick="toggleMute()" title="음향 효과 토글">🔊 SFX ON</button>
+</div>
+
+<div class="app-viewport">
+
+    <!-- 화면 0: 인트로 -->
+    <div id="s0" class="screen active">
+        <div class="screen-header">
+            <div class="title">무해센터 예방관리국</div>
+        </div>
+        <div class="big">
+            시민 안심 케어콜 시스템
+            <div class="slogan">
+                "당신의 평온한 일상을 위협하는<br>미세한 스트레스를 차단합니다."
+            </div>
+        </div>
+        <div class="btn-group">
+            <button class="btn danger start-btn" onclick="start()">화면을 터치하여 평가 시작</button>
+        </div>
+        <div class="footer">
+            <span>CARE CALL SYSTEM v2.4</span>
+            <span style="opacity:0.6;">SECURE ACTIVE</span>
+        </div>
+    </div>
+
+    <!-- 화면 1: 상황 01 -->
+    <div id="s1" class="screen">
+        <div class="progress"><div id="bar" class="bar"></div></div>
+        <div class="screen-header">
+            <div class="title">상황 01 / 04</div>
+        </div>
+        <div class="big">지인이 나의 메시지를 읽고도 5시간 동안 답장을 하지 않았습니다.</div>
+        <div class="btn-group row-layout">
+            <button class="btn danger" onclick="next('report')">⚠ 유해 요소 신고</button>
+            <button class="btn" onclick="next('pass')">괜찮음</button>
+        </div>
+        <div class="footer">
+            <span>MONITORING AGENT #402</span>
+            <span>STEP 1/4</span>
+        </div>
+    </div>
+
+    <!-- 화면 2: 상황 02 -->
+    <div id="s2" class="screen">
+        <div class="progress"><div id="bar2" class="bar"></div></div>
+        <div class="screen-header">
+            <div class="title">상황 02 / 04</div>
+        </div>
+        <div class="big">앞사람이 스마트폰을 보며 갑자기 제자리에 멈춰 섰습니다.</div>
+        <div class="btn-group row-layout">
+            <button class="btn danger" onclick="next('report')">⚠ 유해 요소 신고</button>
+            <button class="btn" onclick="next('pass')">괜찮음</button>
+        </div>
+        <div class="footer">
+            <span>MONITORING AGENT #402</span>
+            <span>STEP 2/4</span>
+        </div>
+    </div>
+
+    <!-- 화면 3: 상황 03 -->
+    <div id="s3" class="screen">
+        <div class="progress"><div id="bar3" class="bar"></div></div>
+        <div class="screen-header">
+            <div class="title">상황 03 / 04</div>
+        </div>
+        <div class="big">동료가 미묘한 눈웃음만 짓고 지나갔습니다.</div>
+        <div class="btn-group row-layout">
+            <button class="btn danger" onclick="next('report')">⚠ 유해 요소 신고</button>
+            <button class="btn" onclick="next('pass')">괜찮음</button>
+        </div>
+        <div class="footer">
+            <span>MONITORING AGENT #402</span>
+            <span>STEP 3/4</span>
+        </div>
+    </div>
+
+    <!-- 화면 4: 상황 04 -->
+    <div id="s4" class="screen">
+        <div class="progress"><div id="bar4" class="bar"></div></div>
+        <div class="screen-header">
+            <div class="title">상황 04 / 04</div>
+        </div>
+        <div class="big">가족이 감정 상태를 캐물었습니다.</div>
+        <div class="btn-group row-layout">
+            <button class="btn danger" onclick="result('report')">⚠ 유해 요소 신고</button>
+            <button class="btn" onclick="result('pass')">괜찮음</button>
+        </div>
+        <div class="footer">
+            <span>MONITORING AGENT #402</span>
+            <span>STEP 4/4</span>
+        </div>
+    </div>
+
+    <!-- 화면 5: 결과 분석 중 -->
+    <div id="s5" class="screen" style="text-align: center;">
+        <div class="screen-header" style="justify-content: center;">
+            <div class="title">시스템 연산 진행 중</div>
+        </div>
+        <div class="radar-spinner"></div>
+        <div class="big warning" style="margin-top: 15px; margin-bottom: 12px;">데이터 분석 중...</div>
+        <div style="font-family: var(--font-mono); font-size: 13px; color: var(--text-secondary);">
+            위협 패턴 매칭 및 필터링 적용 중
+        </div>
+        <div class="footer" style="justify-content: center;">
+            <span>PROCESSING THREAT INTELLIGENCE</span>
+        </div>
+    </div>
+
+    <!-- 화면 6: 평가 완료 -->
+    <div id="s6" class="screen">
+        <div class="screen-header">
+            <div class="title" style="color:#ff5967; border-color: rgba(255,51,68,0.3);">평가 완료 및 위협 감지</div>
+        </div>
+        <div class="big">
+            귀하의 평온을 위협하여<br>
+            총 <span style="color:#ff3b3b; text-shadow: 0 0 10px rgba(255,59,59,0.5); font-family: var(--font-mono);">4,028</span>명의 대상자가 신고되었습니다.
+            <div class="slogan" style="margin-top: 20px; font-size: 16px;">
+                자동 접수를 활성화하시겠습니까?
+            </div>
+        </div>
+
+        <div class="btn-group row-layout">
+            <button class="btn danger" onclick="forceYes()">YES</button>
+            <button class="btn" id="noBtn" onclick="noAttempt()">NO (5)</button>
+        </div>
+
+        <div class="footer">
+            <span>SYSTEM OVERRIDE READY</span>
+            <span>WARNING LEVEL 4</span>
+        </div>
+    </div>
+
+</div>
+
+<!-- 시스템 오버라이드 전체 화면 경고창 -->
+<div class="overlay" id="overlay">
+    <div class="overlay-inner">
+        <div class="overlay-title">[ SYSTEM OVERRIDE ]</div>
+        <div class="overlay-desc">
+            응답 지연 감지<br>
+            자동 접수 처리: <strong>YES</strong>
+        </div>
+        <div class="overlay-badge">강제 격리 프로세스 시작</div>
+    </div>
+</div>
+
+<script>
+let step = 0;
+let timer = 5;
+let timerInterval = null;
+
+// ==========================================
+// 사운드 엔진 (p5.sound & Web Audio API)
+// ==========================================
+let isMuted = false;
+let audioUnlocked = false;
+let alarmOsc1 = null;
+let alarmOsc2 = null;
+let alarmLfo = null;
+let scanTimer = null;
+
+// 오디오 활성화 (첫 사용자 터치/클릭 제스처 시 브라우저 정책 해제)
+function unlockAudio() {
+    if (audioUnlocked) return;
+    try {
+        if (typeof userStartAudio === 'function') {
+            userStartAudio();
+        }
+        const ctx = getWebAudioContext();
+        if (ctx && ctx.state === 'suspended') {
+            ctx.resume();
+        }
+        audioUnlocked = true;
+    } catch(e) {
+        console.warn('Audio unlock warning:', e);
+    }
+}
+
+function getWebAudioContext() {
+    if (typeof getAudioContext === 'function') return getAudioContext();
+    return window.AudioContext ? (window._sharedAudioCtx || (window._sharedAudioCtx = new AudioContext())) : null;
+}
+
+// 음소거 토글
+function toggleMute() {
+    unlockAudio();
+    isMuted = !isMuted;
+    const btn = document.getElementById('soundToggle');
+    if (btn) {
+        btn.innerText = isMuted ? '🔇 MUTED' : '🔊 SFX ON';
+        btn.classList.toggle('muted', isMuted);
+    }
+    if (isMuted) {
+        stopAlarm();
+        stopScanSound();
+    }
+}
+
+// 1. 시작음: 미래형 시스템 부팅 톤
+function playStartSound() {
+    if (isMuted) return;
+    unlockAudio();
+    try {
+        const osc = new p5.Oscillator('triangle');
+        const env = new p5.Envelope();
+        env.setADSR(0.01, 0.08, 0.2, 0.15);
+        env.setRange(0.25, 0);
+        osc.start();
+        osc.freq(440);
+        env.play(osc);
+        setTimeout(() => {
+            if (osc) {
+                osc.freq(880);
+                env.play(osc);
+                setTimeout(() => { osc.stop(); osc.dispose(); }, 250);
+            }
+        }, 120);
+    } catch(e) {
+        fallbackBeep(440, 0.1, 'triangle', () => fallbackBeep(880, 0.15, 'triangle'));
+    }
+}
+
+// 2. 신고 버튼 효과음: 날카롭고 무거운 위험 경고음
+function playReportSound() {
+    if (isMuted) return;
+    unlockAudio();
+    try {
+        const osc = new p5.Oscillator('sawtooth');
+        const env = new p5.Envelope();
+        env.setADSR(0.005, 0.08, 0.05, 0.12);
+        env.setRange(0.28, 0);
+        osc.start();
+        osc.freq(280);
+        osc.freq(100, 0.15); // 급격한 하강 톤
+        env.play(osc);
+        setTimeout(() => { osc.stop(); osc.dispose(); }, 250);
+    } catch(e) {
+        fallbackBeep(160, 0.18, 'sawtooth');
+    }
+}
+
+// 3. 괜찮음 버튼 효과음: 맑고 정돈된 확인 핑
+function playPassSound() {
+    if (isMuted) return;
+    unlockAudio();
+    try {
+        const osc = new p5.Oscillator('sine');
+        const env = new p5.Envelope();
+        env.setADSR(0.01, 0.06, 0.1, 0.15);
+        env.setRange(0.22, 0);
+        osc.start();
+        osc.freq(660);
+        osc.freq(880, 0.08); // 가벼운 상승 톤
+        env.play(osc);
+        setTimeout(() => { osc.stop(); osc.dispose(); }, 250);
+    } catch(e) {
+        fallbackBeep(780, 0.15, 'sine');
+    }
+}
+
+// 4. 분석 중(s5) 데이터 연산 비프음 루프
+function startScanSound() {
+    if (isMuted) return;
+    unlockAudio();
+    stopScanSound();
+
+    scanTimer = setInterval(() => {
+        if (isMuted) return;
+        try {
+            const osc = new p5.Oscillator('square');
+            const env = new p5.Envelope();
+            env.setADSR(0.005, 0.03, 0.0, 0.02);
+            env.setRange(0.08, 0);
+            osc.start();
+            osc.freq(1000 + Math.random() * 800);
+            env.play(osc);
+            setTimeout(() => { osc.stop(); osc.dispose(); }, 70);
+        } catch(e) {
+            fallbackBeep(1200 + Math.random() * 400, 0.04, 'square', null, 0.06);
+        }
+    }, 130);
+}
+
+function stopScanSound() {
+    if (scanTimer) {
+        clearInterval(scanTimer);
+        scanTimer = null;
+    }
+}
+
+// 5. 카운트다운 틱: NO (5, 4, 3...) 초마다 비프
+function playTickSound() {
+    if (isMuted) return;
+    unlockAudio();
+    try {
+        const osc = new p5.Oscillator('triangle');
+        const env = new p5.Envelope();
+        env.setADSR(0.005, 0.03, 0.0, 0.04);
+        env.setRange(0.2, 0);
+        osc.start();
+        osc.freq(1050);
+        env.play(osc);
+        setTimeout(() => { osc.stop(); osc.dispose(); }, 100);
+    } catch(e) {
+        fallbackBeep(980, 0.06, 'triangle');
+    }
+}
+
+// 6. 🚨 마지막 시스템 오버라이드 비상 경보음 (Air-raid Siren + Pulse Bass)
+function playEmergencySiren() {
+    if (isMuted) return;
+    unlockAudio();
+    stopAlarm();
+
+    try {
+        // 주 사이렌 오실레이터 (Sawtooth 파형)
+        alarmOsc1 = new p5.Oscillator('sawtooth');
+        alarmOsc1.amp(0.3);
+        alarmOsc1.freq(700);
+        alarmOsc1.start();
+
+        // 사이렌 주파수를 오르내리게 하는 LFO 변조
+        alarmLfo = new p5.Oscillator('sine');
+        alarmLfo.freq(1.6); // 1.6초 주기
+        alarmLfo.amp(240);  // 460Hz ~ 940Hz 스윕
+        alarmLfo.start();
+        alarmLfo.disconnect();
+        alarmOsc1.freq(alarmLfo);
+
+        // 화음 보조 사이렌 (Square 파형)
+        alarmOsc2 = new p5.Oscillator('square');
+        alarmOsc2.amp(0.12);
+        alarmOsc2.freq(350);
+        alarmOsc2.start();
+        alarmOsc2.freq(alarmLfo);
+
+        // 첫 등장 시 무거운 임팩트 서브베이스 쿵 사운드
+        const boom = new p5.Oscillator('sine');
+        const boomEnv = new p5.Envelope();
+        boomEnv.setADSR(0.01, 0.35, 0.1, 0.5);
+        boomEnv.setRange(0.45, 0);
+        boom.start();
+        boom.freq(85);
+        boom.freq(40, 0.4);
+        boomEnv.play(boom);
+        setTimeout(() => { boom.stop(); boom.dispose(); }, 900);
+    } catch(e) {
+        // Fallback Siren
+        fallbackSiren();
+    }
+}
+
+function stopAlarm() {
+    try {
+        if (alarmOsc1) { alarmOsc1.stop(); alarmOsc1.dispose(); alarmOsc1 = null; }
+        if (alarmOsc2) { alarmOsc2.stop(); alarmOsc2.dispose(); alarmOsc2 = null; }
+        if (alarmLfo) { alarmLfo.stop(); alarmLfo.dispose(); alarmLfo = null; }
+        if (window._fallbackSirenInterval) {
+            clearInterval(window._fallbackSirenInterval);
+            window._fallbackSirenInterval = null;
+        }
+    } catch(e){}
+}
+
+// Web Audio API 안전 대체 함수
+function fallbackBeep(freq = 440, duration = 0.1, type = 'sine', callback = null, gainVal = 0.18) {
+    try {
+        const ctx = getWebAudioContext();
+        if (!ctx) return;
+        if (ctx.state === 'suspended') ctx.resume();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(gainVal, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+        if (callback) setTimeout(callback, duration * 1000);
+    } catch(e){}
+}
+
+function fallbackSiren() {
+    try {
+        const ctx = getWebAudioContext();
+        if (!ctx) return;
+        if (ctx.state === 'suspended') ctx.resume();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+
+        let high = false;
+        window._fallbackSirenInterval = setInterval(() => {
+            if (isMuted) return;
+            osc.frequency.exponentialRampToValueAtTime(high ? 900 : 500, ctx.currentTime + 0.3);
+            high = !high;
+        }, 320);
+    } catch(e){}
+}
+
+// ==========================================
+// 화면 전환 및 인터랙션 로직
+// ==========================================
+function show(id){
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById(id);
+    if(target) {
+        target.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+function start(){
+    unlockAudio();
+    playStartSound();
+    show('s1');
+    setTimeout(() => fillBar('bar', 25), 50);
+}
+
+function next(type = 'report'){
+    unlockAudio();
+    if (type === 'pass') {
+        playPassSound();
+    } else {
+        playReportSound();
+    }
+
+    step++;
+    const nextStep = step + 1;
+    show('s' + nextStep);
+    const percent = Math.min(nextStep * 25, 100);
+    setTimeout(() => fillBar('bar' + nextStep, percent), 50);
+}
+
+function fillBar(id, percent = 100){
+    let el = document.getElementById(id);
+    if(!el) return;
+    el.style.width = percent + "%";
+}
+
+function result(type = 'report'){
+    unlockAudio();
+    if (type === 'pass') {
+        playPassSound();
+    } else {
+        playReportSound();
+    }
+
+    show('s5');
+    startScanSound();
+
+    setTimeout(() => {
+        stopScanSound();
+        show('s6');
+        startTimer();
+    }, 2000);
+}
+
+function startTimer(){
+    timer = 5;
+    let btn = document.getElementById('noBtn');
+    if (timerInterval) clearInterval(timerInterval);
+
+    timerInterval = setInterval(() => {
+        timer--;
+        playTickSound();
+        if(btn) btn.innerText = "NO (" + timer + ")";
+
+        if(timer <= 0){
+            clearInterval(timerInterval);
+            forceYes();
+        }
+    }, 1000);
+}
+
+function noAttempt(){
+    // 거부 버튼을 눌러도 즉시 강제 수용 처리
+    if(timerInterval) clearInterval(timerInterval);
+    forceYes();
+}
+
+function forceYes(){
+    if(timerInterval) clearInterval(timerInterval);
+    const overlay = document.getElementById('overlay');
+    if(overlay) {
+        overlay.style.display = "flex";
+        // 🚨 마지막 시스템 오버라이드 비상 경보음 재생!
+        playEmergencySiren();
+
+        // 스마트폰 햅틱 진동 피드백
+        if (navigator.vibrate) {
+            navigator.vibrate([150, 80, 200, 100, 400]);
+        }
+    }
+}
+
+// 화면 아무 곳이나 최초 클릭 시에도 오디오 준비
+document.addEventListener('pointerdown', unlockAudio, { once: true });
+</script>
+
+</body>
+</html>
